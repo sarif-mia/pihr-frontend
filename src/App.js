@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { HashRouter as Router } from 'react-router-dom';
 import AdminDashboard from './components/AdminDashboard';
 import UserDashboard from './components/UserDashboard';
 import AttendanceMarking from './components/AttendanceMarking';
@@ -38,43 +39,45 @@ function App() {
   }
 
   return (
-    <div>
-      <Notification message={notification} onClose={handleCloseNotification} />
-      {role === 'admin' ? (
-        <>
-          <AdminDashboard
-            onLogout={handleLogout}
-            employees={employees}
-            onAddEmployee={handleAddEmployee}
-            onRemoveEmployee={handleRemoveEmployee}
-            leaves={leaves}
-            expenses={expenses}
-            onReconcileLeave={handleReconcileLeave}
-            onReconcileExpense={handleReconcileExpense}
-          />
-          <div className="p-6">
-            <h2 className="text-xl font-bold mb-2">Attendance Records</h2>
-            <ul>
-              {attendance.map((a, i) => (
-                <li key={i}>{a.user} - {a.date}</li>
-              ))}
-            </ul>
+    <Router>
+      <div>
+        <Notification message={notification} onClose={handleCloseNotification} />
+        {role === 'admin' ? (
+          <>
+            <AdminDashboard
+              onLogout={handleLogout}
+              employees={employees}
+              onAddEmployee={handleAddEmployee}
+              onRemoveEmployee={handleRemoveEmployee}
+              leaves={leaves}
+              expenses={expenses}
+              onReconcileLeave={handleReconcileLeave}
+              onReconcileExpense={handleReconcileExpense}
+            />
+            <div className="p-6">
+              <h2 className="text-xl font-bold mb-2">Attendance Records</h2>
+              <ul>
+                {attendance.map((a, i) => (
+                  <li key={i}>{a.user} - {a.date}</li>
+                ))}
+              </ul>
+            </div>
+          </>
+        ) : (
+          <div>
+            <UserDashboard
+              onLogout={handleLogout}
+              onSubmitLeave={handleSubmitLeave}
+              onSubmitExpense={handleSubmitExpense}
+              leaves={leaves}
+              expenses={expenses}
+              user={user}
+            />
+            <AttendanceMarking onMark={handleMarkAttendance} attendance={attendance} user={user} />
           </div>
-        </>
-      ) : (
-        <div>
-          <UserDashboard
-            onLogout={handleLogout}
-            onSubmitLeave={handleSubmitLeave}
-            onSubmitExpense={handleSubmitExpense}
-            leaves={leaves}
-            expenses={expenses}
-            user={user}
-          />
-          <AttendanceMarking onMark={handleMarkAttendance} attendance={attendance} user={user} />
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </Router>
   );
 }
 
