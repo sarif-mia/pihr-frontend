@@ -1,26 +1,31 @@
 import React, { useState } from 'react';
 import AdminDashboard from './components/AdminDashboard';
 import UserDashboard from './components/UserDashboard';
+import AttendanceMarking from './components/AttendanceMarking';
+import Notification from './components/Notification';
 
 function App() {
-  const [role, setRole] = useState('admin'); // 'admin' or 'user'
+  const [role, setRole] = useState(null); // 'admin' or 'user'
   const [user, setUser] = useState('User1');
-  // Shared state for demo
   const [employees, setEmployees] = useState([]);
   const [leaves, setLeaves] = useState([]);
   const [expenses, setExpenses] = useState([]);
+  const [attendance, setAttendance] = useState([]);
+  const [notification, setNotification] = useState('');
 
   // Admin handlers
-  const handleAddEmployee = (emp) => setEmployees([...employees, { ...emp, id: Date.now() }]);
-  const handleRemoveEmployee = (id) => setEmployees(employees.filter(e => e.id !== id));
-  const handleReconcileLeave = (id, status) => setLeaves(leaves.map(l => l.id === id ? { ...l, status } : l));
-  const handleReconcileExpense = (id, status) => setExpenses(expenses.map(e => e.id === id ? { ...e, status } : e));
+  const handleAddEmployee = (emp) => { setEmployees([...employees, { ...emp, id: Date.now() }]); setNotification('Employee added!'); };
+  const handleRemoveEmployee = (id) => { setEmployees(employees.filter(e => e.id !== id)); setNotification('Employee removed!'); };
+  const handleReconcileLeave = (id, status) => { setLeaves(leaves.map(l => l.id === id ? { ...l, status } : l)); setNotification(`Leave ${status}`); };
+  const handleReconcileExpense = (id, status) => { setExpenses(expenses.map(e => e.id === id ? { ...e, status } : e)); setNotification(`Expense ${status}`); };
 
   // User handlers
-  const handleSubmitLeave = (leave) => setLeaves([...leaves, { ...leave, id: Date.now(), status: 'Pending' }]);
-  const handleSubmitExpense = (expense) => setExpenses([...expenses, { ...expense, id: Date.now(), status: 'Pending' }]);
+  const handleSubmitLeave = (leave) => { setLeaves([...leaves, { ...leave, id: Date.now(), status: 'Pending' }]); setNotification('Leave request submitted!'); };
+  const handleSubmitExpense = (expense) => { setExpenses([...expenses, { ...expense, id: Date.now(), status: 'Pending' }]); setNotification('Expense claim submitted!'); };
+  const handleMarkAttendance = (entry) => { setAttendance([...attendance, entry]); setNotification('Attendance marked!'); };
 
   const handleLogout = () => setRole(null);
+  const handleCloseNotification = () => setNotification('');
 
   if (!role) {
     return (
@@ -32,26 +37,44 @@ function App() {
     );
   }
 
-  return role === 'admin' ? (
-    <AdminDashboard
-      onLogout={handleLogout}
-      employees={employees}
-      onAddEmployee={handleAddEmployee}
-      onRemoveEmployee={handleRemoveEmployee}
-      leaves={leaves}
-      expenses={expenses}
-      onReconcileLeave={handleReconcileLeave}
-      onReconcileExpense={handleReconcileExpense}
-    />
-  ) : (
-    <UserDashboard
-      onLogout={handleLogout}
-      onSubmitLeave={handleSubmitLeave}
-      onSubmitExpense={handleSubmitExpense}
-      leaves={leaves}
-      expenses={expenses}
-      user={user}
-    />
+  return (
+    <div>
+      <Notification message={notification} onClose={handleCloseNotification} />
+      {role === 'admin' ? (
+        <>
+          <AdminDashboard
+            onLogout={handleLogout}
+            employees={employees}
+            onAddEmployee={handleAddEmployee}
+            onRemoveEmployee={handleRemoveEmployee}
+            leaves={leaves}
+            expenses={expenses}
+            onReconcileLeave={handleReconcileLeave}
+            onReconcileExpense={handleReconcileExpense}
+          />
+          <div className="p-6">
+            <h2 className="text-xl font-bold mb-2">Attendance Records</h2>
+            <ul>
+              {attendance.map((a, i) => (
+                <li key={i}>{a.user} - {a.date}</li>
+              ))}
+            </ul>
+          </div>
+        </>
+      ) : (
+        <div>
+          <UserDashboard
+            onLogout={handleLogout}
+            onSubmitLeave={handleSubmitLeave}
+            onSubmitExpense={handleSubmitExpense}
+            leaves={leaves}
+            expenses={expenses}
+            user={user}
+          />
+          <AttendanceMarking onMark={handleMarkAttendance} attendance={attendance} user={user} />
+        </div>
+      )}
+    </div>
   );
 }
 
