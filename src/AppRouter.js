@@ -1,17 +1,20 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Navbar from './components/Navbar';
-import Dashboard from './pages/Dashboard';
+import { HashRouter as Router, Routes, Route } from 'react-router-dom';
+import Layout from './components/Layout';
+import DashboardHome from './pages/DashboardHome';
 // Import other pages as you create them
 
-const AppRouter = () => (
-  <Router>
-    <Navbar />
-    <Routes>
-      <Route path="/" element={<Dashboard />} />
-      {/* Add routes for Employees, Payroll, Tasks, Expenses, Tracking, Login */}
-    </Routes>
-  </Router>
-);
+function AppRouter({ stats }) {
+  return (
+    <Router>
+      <Layout>
+        <Routes>
+          <Route path="/" element={<DashboardHome stats={stats} />} />
+          {/* Add routes for Employees, Leaves, Expenses, Attendance, Profile, Settings */}
+        </Routes>
+      </Layout>
+    </Router>
+  );
+}
 
 export default AppRouter;
