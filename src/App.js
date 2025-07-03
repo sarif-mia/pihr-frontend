@@ -1,83 +1,89 @@
 import React, { useState } from 'react';
-import { HashRouter as Router } from 'react-router-dom';
-import AdminDashboard from './components/AdminDashboard';
-import UserDashboard from './components/UserDashboard';
-import AttendanceMarking from './components/AttendanceMarking';
+import AppRouter from './AppRouter';
 import Notification from './components/Notification';
+import Login from './pages/Login';
 
 function App() {
   const [role, setRole] = useState(null); // 'admin' or 'user'
-  const [user, setUser] = useState('User1');
+  const [user, setUser] = useState('');
   const [employees, setEmployees] = useState([]);
   const [leaves, setLeaves] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [attendance, setAttendance] = useState([]);
   const [notification, setNotification] = useState('');
+  const [users, setUsers] = useState([{ username: 'admin', password: 'admin', role: 'admin' }, { username: 'user', password: 'user', role: 'user' }]);
 
-  // Admin handlers
+  // Login handler
+  const handleLogin = (username, password, setError) => {
+    const found = users.find(u => u.username === username && u.password === password);
+    if (found) {
+      setRole(found.role);
+      setUser(found.username);
+    } else {
+      setError('Invalid username or password');
+    }
+  };
+
+  // Register handler
+  const handleRegister = (username, password, setError, onSuccess) => {
+    if (users.some(u => u.username === username)) {
+      setError('Username already exists');
+      return;
+    }
+    const newUser = { username, password, role: 'user' };
+    setUsers([...users, newUser]);
+    setNotification('Registration successful! You can now log in.');
+    if (onSuccess) onSuccess();
+  };
+
+  // Handlers (no duplicates)
   const handleAddEmployee = (emp) => { setEmployees([...employees, { ...emp, id: Date.now() }]); setNotification('Employee added!'); };
   const handleRemoveEmployee = (id) => { setEmployees(employees.filter(e => e.id !== id)); setNotification('Employee removed!'); };
   const handleReconcileLeave = (id, status) => { setLeaves(leaves.map(l => l.id === id ? { ...l, status } : l)); setNotification(`Leave ${status}`); };
   const handleReconcileExpense = (id, status) => { setExpenses(expenses.map(e => e.id === id ? { ...e, status } : e)); setNotification(`Expense ${status}`); };
-
-  // User handlers
   const handleSubmitLeave = (leave) => { setLeaves([...leaves, { ...leave, id: Date.now(), status: 'Pending' }]); setNotification('Leave request submitted!'); };
+  const handleRemoveLeave = (id) => { setLeaves(leaves.filter(l => l.id !== id)); setNotification('Leave request cancelled!'); };
   const handleSubmitExpense = (expense) => { setExpenses([...expenses, { ...expense, id: Date.now(), status: 'Pending' }]); setNotification('Expense claim submitted!'); };
+  const handleRemoveExpense = (id) => { setExpenses(expenses.filter(e => e.id !== id)); setNotification('Expense claim cancelled!'); };
   const handleMarkAttendance = (entry) => { setAttendance([...attendance, entry]); setNotification('Attendance marked!'); };
-
-  const handleLogout = () => setRole(null);
+  const handleLogout = () => { setRole(null); setUser(''); };
   const handleCloseNotification = () => setNotification('');
 
+  // Dashboard stats
+  const stats = {
+    employees: employees.length,
+    leaves: leaves.filter(l => l.status === 'Pending').length,
+    expenses: expenses.filter(e => e.status === 'Pending').length,
+    attendance: attendance.filter(a => a.date === new Date().toISOString().slice(0, 10)).length,
+  };
+
   if (!role) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-        <h1 className="text-2xl font-bold mb-4">PiHR Login</h1>
-        <button onClick={() => setRole('admin')} className="bg-blue-500 text-white px-4 py-2 rounded mb-2">Login as Admin</button>
-        <button onClick={() => setRole('user')} className="bg-green-500 text-white px-4 py-2 rounded">Login as User</button>
-      </div>
-    );
+    return <Login onLogin={handleLogin} onRegister={handleRegister} />;
   }
 
   return (
-    <Router>
-      <div>
-        <Notification message={notification} onClose={handleCloseNotification} />
-        {role === 'admin' ? (
-          <>
-            <AdminDashboard
-              onLogout={handleLogout}
-              employees={employees}
-              onAddEmployee={handleAddEmployee}
-              onRemoveEmployee={handleRemoveEmployee}
-              leaves={leaves}
-              expenses={expenses}
-              onReconcileLeave={handleReconcileLeave}
-              onReconcileExpense={handleReconcileExpense}
-            />
-            <div className="p-6">
-              <h2 className="text-xl font-bold mb-2">Attendance Records</h2>
-              <ul>
-                {attendance.map((a, i) => (
-                  <li key={i}>{a.user} - {a.date}</li>
-                ))}
-              </ul>
-            </div>
-          </>
-        ) : (
-          <div>
-            <UserDashboard
-              onLogout={handleLogout}
-              onSubmitLeave={handleSubmitLeave}
-              onSubmitExpense={handleSubmitExpense}
-              leaves={leaves}
-              expenses={expenses}
-              user={user}
-            />
-            <AttendanceMarking onMark={handleMarkAttendance} attendance={attendance} user={user} />
-          </div>
-        )}
-      </div>
-    </Router>
+    <>
+      <Notification message={notification} onClose={handleCloseNotification} />
+      <AppRouter
+        stats={stats}
+        role={role}
+        user={user}
+        employees={employees}
+        leaves={leaves}
+        expenses={expenses}
+        attendance={attendance}
+        onAddEmployee={handleAddEmployee}
+        onRemoveEmployee={handleRemoveEmployee}
+        onReconcileLeave={handleReconcileLeave}
+        onReconcileExpense={handleReconcileExpense}
+        onSubmitLeave={handleSubmitLeave}
+        onRemoveLeave={handleRemoveLeave}
+        onSubmitExpense={handleSubmitExpense}
+        onRemoveExpense={handleRemoveExpense}
+        onMarkAttendance={handleMarkAttendance}
+        onLogout={handleLogout}
+      />
+    </>
   );
 }
 
